@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.6 (2026-10-15)
+
+- `watch` also wakes when you accept or reject one of an agent's suggestions, and says which (judged from
+  the text left behind). The editor's own `revise` is not reported. Watch state now records agents'
+  suggestions too; the earlier state format is still read.
+- README: "Who decides" (agents' suggestions are yours alone, no override; what the editor may do with
+  yours and with comments; deleting markup), macOS or Linux in the requirements, `watch` noticing your
+  decisions, and a link to the new ROADMAP.md.
+
 ## 0.1.5 (2026-10-15)
 
 - Three slash commands: `/obsidian-track-changes-agent:suggest`, `:watch` and `:pending`. Only you can

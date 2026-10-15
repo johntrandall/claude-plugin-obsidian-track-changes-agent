@@ -116,7 +116,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-VERSION = "0.1.5"
+VERSION = "0.1.6"
 PROG = "obsidian-track-changes-agent"
 
 
@@ -769,31 +769,125 @@ def human_marks(path):
     return out
 
 
+SUGGESTION_KINDS = ("addition", "deletion", "substitution")
+AGENT_REMOVED = "agent-removed.json"      # keys of agents' suggestions the command itself removed (revise)
+
+
+def agent_suggestions(path):
+    """The agents' pending suggestions in a note, keyed like human marks."""
+    out = {}
+    for _, mk in numbered(path.read_text(encoding="utf-8")):
+        if is_agent(mk.get("author")) and mk["kind"] in SUGGESTION_KINDS and not mk.get("error"):
+            out[mark_key(mk)] = {"file": str(path), "kind": mk["kind"], "author": mk.get("author"),
+                                 "old": mk.get("old"), "new": mk.get("new"), "text": mk.get("text")}
+    return out
+
+
+def squash(t):
+    return re.sub(r"\s+", " ", t or "").strip()
+
+
+def outcome(sug, text):
+    """Best guess, from the text left behind, whether the human accepted or rejected a suggestion."""
+    body = squash(text)
+    has = lambda t: bool(squash(t)) and squash(t) in body        # noqa: E731
+    k = sug["kind"]
+    if k == "substitution":
+        if has(sug["new"]) and not has(sug["old"]):
+            return "accepted"
+        if has(sug["old"]) and not has(sug["new"]):
+            return "rejected"
+    elif k == "addition":
+        return "accepted" if has(sug["text"]) else "rejected"
+    elif k == "deletion":
+        return "rejected" if has(sug["text"]) else "accepted"
+    return "resolved"
+
+
+def note_agent_removed(keys):
+    """Record suggestions the command removed on an agent's behalf, so `watch` does not report them as the
+    human's decisions."""
+    if not keys:
+        return
+    prior = read_state(AGENT_REMOVED)
+    keep = (prior if isinstance(prior, list) else []) + list(keys)
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    (STATE.parent / AGENT_REMOVED).write_text(json.dumps(keep[-500:], ensure_ascii=False), encoding="utf-8")
+
+
 def cmd_watch(a):
     files = watch_targets(a.paths, a.pattern)
     if not files:
         raise SystemExit(f"{PROG} watch: nothing to watch")
     state_path = STATE.parent / f"watch-{hashlib.sha1('|'.join(map(str, files)).encode()).hexdigest()[:12]}.json"
     prior = read_state(state_path.name)
-    seen, first_run = (set(prior), False) if isinstance(prior, list) else (set(), True)
+    stored = {}
+    if isinstance(prior, dict):                  # {"seen": human mark keys reported, "agents": {key: details}}
+        stored = prior.get("agents") if isinstance(prior.get("agents"), dict) else {}
+        seen, known, first_run = set(prior.get("seen", [])), set(stored), False
+    elif isinstance(prior, list):                # the earlier format: human mark keys only
+        seen, known, first_run = set(prior), set(), False
+    else:
+        seen, known, first_run = set(), set(), True
+
+    def agent_now():
+        out = {}
+        for f in files:
+            if f.exists():
+                out.update(agent_suggestions(f))
+        return out
+
+    def save():
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        state_path.write_text(json.dumps({"seen": sorted(seen),
+                                          "agents": {k: snapshot[k] for k in sorted(known) if k in snapshot}},
+                                         ensure_ascii=False), encoding="utf-8")
+
+    snapshot = dict(stored)                      # details of agents' suggestions, to describe them once gone
+    snapshot.update(agent_now())
+    known |= set(snapshot)
     if first_run and not a.report_existing:      # baseline: what is there now counts as seen
         seen = {m["key"] for f in files for m in human_marks(f)}
-        state_path.parent.mkdir(parents=True, exist_ok=True)
-        state_path.write_text(json.dumps(sorted(seen)), encoding="utf-8")
+    save()
 
     def conflicts():
         return [c for f in files for c in f.parent.glob(f"{glob_escape(f.stem)} (Conflicted copy*{f.suffix}")]
 
     def fresh():
-        return [m for f in files if f.exists() for m in human_marks(f) if m["key"] not in seen]
+        """The human's new marks, then agents' suggestions the human has since accepted or rejected."""
+        items = [m for f in files if f.exists() for m in human_marks(f) if m["key"] not in seen]
+        now = agent_now()
+        snapshot.update(now)
+        removed = read_state(AGENT_REMOVED)
+        removed = set(removed) if isinstance(removed, list) else set()
+        texts = {}
+        for key in sorted(known - set(now)):
+            if key in removed or key not in snapshot:
+                known.discard(key)               # removed by an agent, or never seen in detail: not news
+                continue
+            sug = snapshot[key]
+            f = Path(sug["file"])
+            if f not in texts:
+                texts[f] = f.read_text(encoding="utf-8") if f.exists() else ""
+            what = (f"{one_line(sug['old'] or '')!r} -> {one_line(sug['new'] or '')!r}" if sug["kind"] == "substitution"
+                    else repr(one_line(sug["text"] or "")))
+            items.append({"key": key, "file": sug["file"], "n": 0, "line": 0,
+                          "kind": f"{outcome(sug, texts[f])} {sug['kind']}", "author": sug["author"],
+                          "what": what[:200], "decided": True})
+        known.update(now)
+        return items
 
     def report(code, items, headline):
+        save()
         if a.json:
             print(json.dumps({"status": headline, "items": items}, ensure_ascii=False, indent=1))
         else:
             print(headline)
             for m in items:
-                print(f"  {Path(m['file']).name}:{m['line']}  #{m['n']} {m['kind']} by {m['author']}: {m['what']}")
+                if m.get("decided"):
+                    print(f"  {Path(m['file']).name}  your decision: {m['kind']} by {m['author']}: {m['what']}")
+                else:
+                    print(f"  {Path(m['file']).name}:{m['line']}  #{m['n']} {m['kind']} by {m['author']}: {m['what']}")
         return code
 
     deadline = time.time() + a.timeout if a.timeout else None
@@ -820,10 +914,13 @@ def cmd_watch(a):
                 time.sleep(min(a.settle - idle + 0.5, a.settle))
             pending = fresh()
             if pending:
-                seen.update(m["key"] for m in pending)
-                state_path.parent.mkdir(parents=True, exist_ok=True)
-                state_path.write_text(json.dumps(sorted(seen)), encoding="utf-8")
-                return report(0, pending, f"NEW: {len(pending)} new or changed mark(s) by the human")
+                marks = [m for m in pending if not m.get("decided")]
+                decided = [m for m in pending if m.get("decided")]
+                seen.update(m["key"] for m in marks)
+                known.difference_update(m["key"] for m in decided)
+                parts = ([f"{len(marks)} new or changed mark(s) by the human"] if marks else []) + \
+                        ([f"{len(decided)} agent suggestion(s) the human accepted or rejected"] if decided else [])
+                return report(0, pending, "NEW: " + "; ".join(parts))
         if deadline and time.time() >= deadline:
             return report(1, [], "TIMEOUT: no new marks by the human; re-arm the watch")
         time.sleep(a.interval)
@@ -890,12 +987,14 @@ def cmd_revise(a):
     if (a.new is None) == (a.new_file is None):
         raise Refused("give exactly one of --new TEXT or --new-file FILE")
     new_text = a.new if a.new is not None else Path(a.new_file).read_text(encoding="utf-8").rstrip("\n")
-    dropped = []
+    dropped, folded = [], []
 
     def change(text):
         dropped.clear()
         marks = numbered(text)
         chosen = [mk for i, mk in marks if i in wanted]
+        folded.clear()
+        folded.extend(mark_key(m) for m in chosen if m["kind"] in SUGGESTION_KINDS)
         if len(chosen) != len(wanted):
             raise Refused("some mark numbers don't exist; run `list` again")
         start, end = min(m["start"] for m in chosen), max(m["end"] for m in chosen)
@@ -949,6 +1048,7 @@ def cmd_revise(a):
         dropped.append(set(l.strip() for l in original_full.split("\n") if l.strip()))
         return text[:start] + new_mark + text[end:]
     write(a.file, change)
+    note_agent_removed(folded)               # its own cards, folded away: not the human's decisions
     # block records (for `tidy`) of lines now folded into this one mark are obsolete: nothing is left to tidy
     if dropped:
         orig = dropped[0]

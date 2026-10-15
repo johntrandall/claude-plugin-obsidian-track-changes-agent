@@ -18,7 +18,9 @@ Watch: $ARGUMENTS
    - **0, new marks:** `list` the note, then answer each of the human's marks in the document. A comment
      asking for a change: a `suggest` with `--why`, then `resolve <comment> --addressed-by <suggestion>`.
      A question, or a disagreement: reply with `comment --as editor --on <mark>`. Their own suggestion with
-     no comment attached: `accept` it. Never reject theirs. Then re-arm.
+     no comment attached: `accept` it. Never reject theirs. For each "your decision" line (the human
+     accepted or rejected one of your cards): note it; run `tidy` when a whole-line change is fully
+     resolved; never propose a rejected change again unless asked. Then re-arm.
    - **1, timeout:** re-arm silently.
    - **2, conflict copy:** stop writing. Tell the human a sync conflict copy appeared and that they must
      reconcile it before you continue.

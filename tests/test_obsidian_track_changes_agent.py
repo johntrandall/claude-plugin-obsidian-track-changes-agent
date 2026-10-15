@@ -497,6 +497,55 @@ class Watch(Vault):
         self.assertIn("nothing to watch", err)
 
 
+class WatchDecisions(Vault):
+    """`watch` also wakes when the human accepts or rejects an agent's suggestion."""
+    SUG = '{author="Claude (editor)" date="2026-10-15"~~on Friday~>next Tuesday~~}'
+
+    def watch(self, *extra, after=None, delay=0.6):
+        if after:
+            threading.Timer(delay, after).start()
+        return self.run_tool("watch", self.note, "--interval", "0.2", "--settle", "0.5", "--json", *extra)
+
+    def test_accept_and_reject_wake_it_once(self):
+        self.write(f"We ship {self.SUG}.\n")
+        self.watch("--timeout", "0.5")                                   # baseline: the agent's card is known
+        code, out, _ = self.watch("--timeout", "10", after=lambda: self.write("We ship next Tuesday.\n"))
+        self.assertEqual(code, 0, out)
+        (item,) = json.loads(out)["items"]
+        self.assertEqual((item["kind"], item["author"], item.get("decided")),
+                         ("accepted substitution", "Claude (editor)", True))
+        self.assertEqual(self.watch("--timeout", "1")[0], 1)            # reported once only
+        self.write(f"We ship {self.SUG}.\n")
+        self.watch("--timeout", "0.5")
+        code, out, _ = self.watch("--timeout", "10", after=lambda: self.write("We ship on Friday.\n"))
+        self.assertEqual(json.loads(out)["items"][0]["kind"], "rejected substitution")
+
+    def test_a_decision_made_while_no_watcher_ran(self):
+        self.write(f"We ship {self.SUG}.\n")
+        self.watch("--timeout", "0.5")
+        self.write("We ship next Tuesday.\n")
+        code, out, _ = self.watch("--timeout", "5")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(json.loads(out)["items"][0]["kind"], "accepted substitution")
+
+    def test_the_editor_folding_its_own_cards_does_not_wake_it(self):
+        self.write("The quick brown fox.\n")
+        self.ok("suggest", self.note, "--as", "editor", "--old", "quick", "--new", "slow")
+        self.ok("suggest", self.note, "--as", "editor", "--old", "brown", "--new", "red")
+        self.watch("--timeout", "0.5")
+        revise = lambda: self.run_tool("revise", self.note, "--as", "editor", "--marks", "1-2", "--new", "lazy grey")  # noqa: E731
+        code, out, _ = self.watch("--timeout", "3", after=revise)
+        self.assertEqual(code, 1, out)
+
+    def test_an_added_agent_card_is_tracked_too(self):
+        self.write("We ship on Friday.\n")
+        self.watch("--timeout", "0.5")
+        self.ok("suggest", self.note, "--as", "editor", "--old", "on Friday", "--new", "next Tuesday")
+        self.assertEqual(self.watch("--timeout", "1")[0], 1)            # the agent's own write is not news
+        code, out, _ = self.watch("--timeout", "10", after=lambda: self.write("We ship next Tuesday.\n"))
+        self.assertEqual(json.loads(out)["items"][0]["kind"], "accepted substitution")
+
+
 # --- the earlier tool's state carries over ---------------------------------------------------
 
 class LegacyState(Vault):

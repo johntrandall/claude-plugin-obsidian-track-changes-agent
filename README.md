@@ -59,6 +59,9 @@ a folder of notes) and waits. Nothing happens until you write:
 3. The agent answers in the document: it replies to your comment, proposes the change you asked for as a
    new suggestion, or accepts your edit. Then it goes back to watching.
 
+It also notices your decisions: when you accept or reject one of its cards, it hears which, tidies up after
+a whole-line change, and does not propose a change you rejected again.
+
 Waiting costs almost nothing: `watch` only checks the files' modification times every 10 seconds, and the
 agent does no work until something arrives. It remembers what it has already answered, so it never
 repeats itself and never misses a mark you made while it was busy. If two devices' sync copies of the
@@ -129,7 +132,7 @@ The cost: assistants that cannot run shell commands, such as a chat app without 
 
 | For | You need |
 |---|---|
-| Agents (this plugin) | Claude Code, and Python 3 (preinstalled on most Linux systems; on macOS it comes with the Xcode Command Line Tools). Claude Code plugins cannot declare a dependency on Python, so the plugin checks at the start of each session and tells you if Python 3 is missing |
+| Agents (this plugin) | macOS or Linux (the write lock uses a Unix-only call; Windows is on the roadmap), Claude Code, and Python 3 (preinstalled on most Linux systems; on macOS it comes with the Xcode Command Line Tools). Claude Code plugins cannot declare a dependency on Python, so the plugin checks at the start of each session and tells you if Python 3 is missing |
 | You (reviewing) | Obsidian with the [Track Changes](https://obsidian.md/plugins?id=track-changes) community plugin enabled in the vault, its author name set to your own. Without it you see raw `{~~old~>new~~}` marks instead of review cards |
 | Optional | A sync service such as Obsidian Sync, to review on another device. With Obsidian Sync, set conflict handling to "Create conflict file", so a clash between devices leaves a visible conflict copy (the command then stops writing) |
 
@@ -231,9 +234,28 @@ The hold takes effect when the file reaches the agents' computer, so allow for y
 | `revise` | the editor | folds several of its own pending suggestions into one card |
 | `accept` | the editor | accepts one of your suggestions that has no comment attached |
 | `resolve` | the editor | removes an agent's comment, or yours once a pending suggestion addresses it |
-| `watch` | any agent | waits for your new marks: exit 0 with a summary, 1 on timeout, 2 on a sync conflict copy |
+| `watch` | any agent | waits for your new marks and your accepts and rejects: exit 0 with a summary, 1 on timeout, 2 on a sync conflict copy |
 
-There is no `reject`: only you reject. Every write refuses while the hold switch is on, while a sync conflict
+### Who decides
+
+- **Agents' suggestions: only you.** No agent can accept or reject a suggestion made by an agent, its own
+  included. There is no override, not even if you tell it to in chat: you accept or reject in Obsidian.
+- **Your suggestions: you, or the editor when there is nothing to discuss.** The editor may accept one of
+  your suggestions that has no comment attached. It never rejects yours: if it disagrees, it comments with
+  its reasons, and you reject it yourself if you agree.
+- **Comments.** The editor removes its own when they are done. It removes yours only once one of its
+  suggestions addresses them, and then your comment moves next to that suggestion, quoted, so you review
+  the change together with what you asked for.
+- **Its own pending cards.** The editor may fold several of them into one new card. Nothing is accepted;
+  the original text stays as the new card's "before".
+- **Deleting markup.** No command removes marks wholesale. An agent that edited the file directly, instead
+  of through the command, could; the skill forbids it, but nothing blocks it yet (see Roadmap). To clear
+  all markup yourself, Track Changes' "Finalize for publish" resolves every remaining mark at once. Do not
+  use it on a note others are still reviewing.
+
+### Every write is guarded
+
+Every write refuses while the hold switch is on, while a sync conflict
 copy of the note exists, or while the Inkling plugin is enabled. It then waits for 5 seconds without edits,
 locks the note, re-reads it, replaces it atomically, and after 3 seconds checks the change is still there
 (exit 3 if not).
@@ -267,7 +289,11 @@ Later watchbill releases use this plugin instead. Tested with Track Changes 2.2.
   your sync service (Obsidian Sync, iCloud or similar) delivers them, and the service may merge your older
   copy over the agents' newer writes. Turn on the hold switch before you review on another device, and
   delete it when you are done.
-- **Next:** a listing in the public Claude Code plugin catalog.
+
+## Roadmap
+
+What comes next, and what is under review: [ROADMAP.md](ROADMAP.md). Ideas and votes are welcome as
+GitHub issues.
 
 ## Contributing
 

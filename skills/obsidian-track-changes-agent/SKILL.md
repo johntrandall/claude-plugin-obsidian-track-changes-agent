@@ -133,14 +133,17 @@ obsidian-track-changes-agent watch notes/draft.md            # or a folder: watc
 
 | Exit | Meaning | Do |
 |---|---|---|
-| 0 | The human added or changed marks; the summary lists file, line, number, kind, author and text | Handle them (`list`, then `accept`, `comment`, `suggest`, `resolve`), then re-arm |
+| 0 | The human added or changed marks, or accepted or rejected agents' suggestions; the summary lists each (a decision reads "your decision: accepted substitution by Claude (editor): …") | Handle the marks (`list`, then `accept`, `comment`, `suggest`, `resolve`); take note of the decisions (below); then re-arm |
 | 1 | Timeout (default 30 minutes) with nothing new | Re-arm |
 | 2 | An Obsidian Sync conflict copy appeared | Stop writing, tell the human, wait until they reconcile it |
 
 - It checks only file modification times (every 10 s by default) and waits for 20 s of quiet after
   the human's last edit before reporting, so it reports a finished thought, not a keystroke.
-- Agents' marks never wake it. Nor does the human accepting or rejecting an agent's mark: `list`
-  before building on the note's current state.
+- Agents' own writes never wake it. The human accepting or rejecting an agent's suggestion does: the
+  summary says which, judged from the text left behind ("accepted", "rejected", or "resolved" when the
+  text cannot tell). For a decision: run `tidy` once every mark of a `block` is resolved; never propose a
+  rejected change again unless the human asks; `list` before building on the note's current state.
+  Folding your own cards with `revise` is not reported.
 - It remembers what it reported (state outside the vault), so a re-armed watcher neither repeats
   nor misses marks, including marks that arrived while no watcher ran. Its first run ever treats
   existing marks as seen; `--report-existing` includes them.

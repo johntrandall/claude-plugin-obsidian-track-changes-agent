@@ -1,6 +1,6 @@
 {
   "name": "obsidian-track-changes-agent",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Lets AI agents take part in CriticMarkup review in Obsidian with the Track Changes plugin: the `obsidian-track-changes-agent` command reads and writes signed marks safely, signs agents' marks, keeps agents from accepting their own or rejecting the human's, waits for the human to stop typing, refuses on a hold switch or a Sync conflict, and watches for the human's new marks. The skill says how and when to use it.",
   "author": {
     "name": "John Randall",
