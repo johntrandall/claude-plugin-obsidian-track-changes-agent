@@ -1,0 +1,34 @@
+{
+  "name": "obsidian-track-changes-agent",
+  "owner": {
+    "name": "John Randall",
+    "url": "https://github.com/johntrandall"
+  },
+  "metadata": {
+    "description": "The obsidian-track-changes-agent plugin for Claude Code.",
+    "version": "0.1.1"
+  },
+  "plugins": [
+    {
+      "name": "obsidian-track-changes-agent",
+      "source": "./",
+      "description": "Two-way track changes between agents and a human in Obsidian: the `obsidian-track-changes-agent` command reads and writes Track Changes marks (CriticMarkup) safely, signs agents' marks, keeps agents from accepting their own or rejecting the human's, waits for the human to stop typing, refuses on a hold switch or a Sync conflict, and watches for the human's new marks. The skill says how and when to use it.",
+      "version": "0.1.1",
+      "author": {
+        "name": "John Randall",
+        "url": "https://github.com/johntrandall"
+      },
+      "homepage": "https://github.com/johntrandall/claude-plugin-obsidian-track-changes-agent",
+      "repository": "https://github.com/johntrandall/claude-plugin-obsidian-track-changes-agent",
+      "license": "MIT",
+      "keywords": [
+        "obsidian",
+        "obsidian-track-changes-agent",
+        "criticmarkup",
+        "review",
+        "collaboration",
+        "agents"
+      ]
+    }
+  ]
+}

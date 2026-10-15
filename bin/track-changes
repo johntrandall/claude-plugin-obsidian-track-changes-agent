@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+"""track-changes: the compatibility name of obsidian-track-changes-agent (renamed 2026-10-15, before
+the first public release, because the Obsidian Track Changes plugin's own id is `track-changes`).
+Same arguments; it runs the command beside it. New callers should use obsidian-track-changes-agent."""
+import os, sys
+tool = os.path.join(os.path.dirname(os.path.realpath(__file__)), "obsidian-track-changes-agent")
+os.execv(sys.executable, [sys.executable, tool, *sys.argv[1:]])
