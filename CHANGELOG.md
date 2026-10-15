@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5 (2026-10-15)
+
+- Three slash commands: `/obsidian-track-changes-agent:suggest`, `:watch` and `:pending`. Only you can
+  start them; they run the bundled command without permission prompts.
+- README: the slash commands in the quick start, and when to use the hold switch.
+
 ## 0.1.4 (2026-10-15)
 
 - README: "Why not an MCP server?"; the command is described as designed for agentic use.

@@ -27,8 +27,8 @@ accept or reject, with a note saying why. You answer in Obsidian, and the agent 
 
 ## What it does
 
-The plugin includes one command-line utility, `obsidian-track-changes-agent`, designed for agentic use, and
-a skill that teaches Claude when and how to use it. Together they extend the CriticMarkup review workflow that the Obsidian
+The plugin includes one command-line utility, `obsidian-track-changes-agent`, designed for agentic use, a
+skill that teaches Claude when and how to use it, and three slash commands for the common requests. Together they extend the CriticMarkup review workflow that the Obsidian
 Track Changes plugin enables, so agents can take part in it safely. The agent proposes text, comments and
 answers your replies. You decide in Obsidian, and an agent running `watch` answers you as you work.
 
@@ -177,6 +177,14 @@ obsidian-track-changes-agent install-links   # run it again after each plugin up
    Now reply to a card or leave a comment in Obsidian. Half a minute after you stop typing, the agent's
    answer appears in the note.
 
+Or use the slash commands, which say the same thing the same way every time:
+
+| Slash command | What the agent does |
+|---|---|
+| `/obsidian-track-changes-agent:suggest <note> [what to change]` | proposes its edits as suggestions, each with a reason |
+| `/obsidian-track-changes-agent:watch <note or folder>` | watches and answers your marks as you make them, until you say stop |
+| `/obsidian-track-changes-agent:pending <note>` | says in plain words what is still undecided, and by whom |
+
 With several agents on one document, name one editor and let the others comment:
 
 ```text
@@ -186,7 +194,15 @@ They only comment; you turn their points into suggestions.
 
 ## The hold switch
 
-The hold switch stops every agent from writing, for example while you review on your phone.
+The hold switch stops every agent from writing. When to use it:
+
+- **You are reviewing on another device.** The command cannot see your typing on a phone or tablet, and a
+  sync merge could lay your older copy over the agents' newer writes (see Known limit, under Status).
+- **You are rewriting the note yourself** and do not want suggestions landing in the middle of it.
+- **An agent is misbehaving.** One file stops every agent at once, without finding each session.
+- **The document is final.** Freeze it before you send or publish it.
+
+How it works:
 
 - **Turn it on:** create a note named `track-changes-hold` at the top level of your vault. On a phone, use
   Obsidian's "New note" in the vault's root folder. Your sync service carries the file

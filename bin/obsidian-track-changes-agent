@@ -116,7 +116,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-VERSION = "0.1.4"
+VERSION = "0.1.5"
 PROG = "obsidian-track-changes-agent"
 
 
