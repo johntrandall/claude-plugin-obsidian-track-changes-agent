@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.3 (2026-10-15)
+
+- The `track-changes` command alias is gone: next to the Obsidian plugin of that name it was confusing.
+  Use `obsidian-track-changes-agent`. An old `~/.local/bin/track-changes` link is left alone; remove it
+  yourself.
+- A session-start check says so when Python 3 is missing (Claude Code plugins cannot declare a dependency
+  on it). It never runs `python3` itself, so it cannot open macOS's install dialog.
+- README reworked: the CriticMarkup standard and how Track Changes extends it; why the plugin exists as a
+  list of the problems it solves; the hold switch, including from a phone; Git (code and document review
+  stay out of each other's way; unreviewed suggestions can be committed); what `install-links` is for; a
+  quick start that shows what to ask an agent; the multi-device limit spelled out.
+
 ## 0.1.2 (2026-10-15)
 
 - README: "Why not Git?", the case for in-document review over diffs and pull requests when people and

@@ -1,0 +1,13 @@
+{
+  "description": "obsidian-track-changes-agent: at session start, say so if Python 3 (which the command needs) is missing. Silent otherwise.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/check-python.sh\"", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}

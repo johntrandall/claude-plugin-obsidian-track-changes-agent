@@ -539,8 +539,7 @@ class InstallLinks(Vault):
         super().setUp()
         self.install = os.path.join(self.d.name, "cache", "obsidian-track-changes-agent", "0.1.0")
         os.makedirs(os.path.join(self.install, "bin"))
-        for name in ("obsidian-track-changes-agent", "track-changes"):
-            shutil.copy2(os.path.join(os.path.dirname(TOOL), name), os.path.join(self.install, "bin", name))
+        shutil.copy2(TOOL, os.path.join(self.install, "bin", "obsidian-track-changes-agent"))
         self.plugins = os.path.join(self.d.name, "installed_plugins.json")
         self.set_plugins({"obsidian-track-changes-agent@example": [{"scope": "user", "installPath": self.install,
                                                        "version": "0.1.0"}]})
@@ -571,10 +570,7 @@ class InstallLinks(Vault):
         self.assertEqual(os.path.realpath(self.link), os.path.realpath(TOOL))
         p = subprocess.run([self.link, "--version"], capture_output=True, text=True)
         self.assertEqual(p.stdout.strip(), f"obsidian-track-changes-agent {tc.VERSION}")
-        alias = os.path.join(self.bin, "track-changes")                 # the compatibility name, linked too
-        self.assertEqual(os.path.realpath(alias), os.path.realpath(os.path.join(os.path.dirname(TOOL), "track-changes")))
-        p = subprocess.run([alias, "--version"], capture_output=True, text=True)
-        self.assertEqual(p.stdout.strip(), f"obsidian-track-changes-agent {tc.VERSION}")
+        self.assertFalse(os.path.lexists(os.path.join(self.bin, "track-changes")))   # alias dropped in 0.1.3
 
     def test_blocked_by_a_file_unless_forced(self):
         os.makedirs(self.bin)
@@ -604,6 +600,32 @@ class InstallLinks(Vault):
         code, _, err = self.links()
         self.assertIn("more than one", err)
         self.assertEqual(self.links("--from", "obsidian-track-changes-agent@b")[0], 0)
+
+
+# --- the session-start Python check -----------------------------------------------------------------
+
+HOOK = os.path.join(os.path.dirname(os.path.dirname(TOOL)), "hooks", "check-python.sh")
+
+
+@unittest.skipUnless(os.path.isfile(HOOK), "no hooks/check-python.sh")
+class PythonCheck(unittest.TestCase):
+    def test_silent_when_python3_is_there(self):
+        p = subprocess.run(["/bin/sh", HOOK], capture_output=True, text=True,
+                           env={"PATH": os.path.dirname(sys.executable) + ":/usr/bin:/bin"})
+        if os.path.realpath(sys.executable).startswith("/usr/bin") and sys.platform == "darwin":
+            self.skipTest("system python on macOS: the check depends on the Command Line Tools")
+        self.assertEqual((p.returncode, p.stdout), (0, ""))
+
+    def test_says_so_when_python3_is_missing(self):
+        with tempfile.TemporaryDirectory() as d:
+            for tool in ("uname", "xcode-select"):
+                real = shutil.which(tool)
+                if real:
+                    os.symlink(real, os.path.join(d, tool))
+            p = subprocess.run(["/bin/sh", HOOK], capture_output=True, text=True, env={"PATH": d})
+        out = json.loads(p.stdout)
+        self.assertIn("needs Python 3", out["systemMessage"])
+        self.assertEqual(out["hookSpecificOutput"]["hookEventName"], "SessionStart")
 
 
 if __name__ == "__main__":

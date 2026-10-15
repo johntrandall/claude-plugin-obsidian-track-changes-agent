@@ -10,8 +10,7 @@ itself**. The human reviews in Obsidian with the **Track Changes** community plu
 mark in a side panel, accept, reject or reply. Agents never type marks by hand. They use the
 `obsidian-track-changes-agent` command, which signs each mark, enforces who may do what, and guards every write.
 
-The command is on the Bash PATH while this plugin is enabled. `track-changes` is its compatibility
-name (the plugin's name before 0.1.1); new callers use `obsidian-track-changes-agent`. `obsidian-track-changes-agent install-links` also
+The command is on the Bash PATH while this plugin is enabled. `obsidian-track-changes-agent install-links` also
 links it into `~/.local/bin` for use outside Claude Code. `obsidian-track-changes-agent --help` lists everything.
 
 ## 1. When to use Track Changes, and when not

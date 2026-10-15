@@ -116,7 +116,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 PROG = "obsidian-track-changes-agent"
 
 
@@ -1052,12 +1052,12 @@ def dev_bin(path):
     raise SystemExit(f"{PROG} install-links: --dev {path}: no plugin/bin/{PROG} or bin/{PROG} under it")
 
 
-ALIASES = ("track-changes",)      # compatibility name (the plugin was track-changes until 0.1.1)
+ALIASES = ()      # other names to link; the track-changes alias was dropped in 0.1.3
 
 
 def cmd_install_links(a):
-    """Link ~/.local/bin/obsidian-track-changes-agent (and the compatibility name track-changes) to
-    the installed plugin's copy, or a working tree's with --dev. Atomic: the command is never missing
+    """Link ~/.local/bin/obsidian-track-changes-agent to the installed plugin's copy, or a working
+    tree's with --dev. Atomic: the command is never missing
     from PATH mid-switch. Re-run after each plugin update."""
     src_bin, what = dev_bin(a.dev) if a.dev else installed_bin(plugins_file(), a.pick)
     bin_dir = Path(a.bin_dir).expanduser().resolve()
@@ -1132,7 +1132,7 @@ def main(argv=None):
     s.add_argument("--addressed-by", type=int, help="resolve: the editor suggestion that addresses the human's comment")
     # No `reject`: no agent may reject a suggestion. To argue against one of the human's,
     # `comment --on N` and let them reject it.
-    s = sub.add_parser("install-links", help="link this command (and its compatibility name track-changes) into ~/.local/bin")
+    s = sub.add_parser("install-links", help="link this command into ~/.local/bin, for use outside Claude Code")
     s.add_argument("--check", action="store_true", help="report only; exit 1 unless the link is right")
     s.add_argument("--dry-run", action="store_true")
     s.add_argument("--force", action="store_true", help="replace a regular file in the way")
