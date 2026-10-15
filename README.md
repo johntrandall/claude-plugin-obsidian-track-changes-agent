@@ -1,7 +1,8 @@
 # obsidian-track-changes-agent
 
 A Claude Code plugin that lets AI agents take part in CriticMarkup review in Obsidian: agents propose and
-comment as tracked changes, and you accept or reject them with the Track Changes plugin.
+comment as tracked changes, you accept, reject or reply with the Track Changes plugin, and an agent watching
+the note answers you as you go.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -9,9 +10,11 @@ comment as tracked changes, and you accept or reject them with the Track Changes
 
 When an AI agent helps you write, it is hard to see what it changed and to keep the final say. This plugin
 makes the agent propose every change the way a colleague would in a word processor: as a suggestion you
-accept or reject, with a note saying why. You answer in Obsidian, at your own pace, and the agent picks your
-answers up.
+accept or reject, with a note saying why. You answer in Obsidian, and the agent answers back.
 
+- **It feels like working with a colleague:** leave a comment or an edit in the note, and about half a
+  minute after you stop typing, the agent watching it replies, makes the change you asked for, or asks you
+  a question, right there in the document. No chat window, no copy and paste.
 - **You stay in charge:** an agent can never accept its own suggestion or reject one of yours.
 - **Nothing is lost while you type:** the agent waits until you pause, and checks afterwards that its change
   stuck.
@@ -24,11 +27,10 @@ answers up.
 
 ## What it does
 
-The plugin includes one command-line utility, `obsidian-track-changes-agent`, and a skill that teaches
-Claude when and how to use it. Together they extend the CriticMarkup review workflow that the Obsidian
+The plugin includes one command-line utility, `obsidian-track-changes-agent`, designed for agentic use, and
+a skill that teaches Claude when and how to use it. Together they extend the CriticMarkup review workflow that the Obsidian
 Track Changes plugin enables, so agents can take part in it safely. The agent proposes text, comments and
-answers your replies. You decide in Obsidian. A `watch` mode lets an idle agent wait for your marks and
-answer them.
+answers your replies. You decide in Obsidian, and an agent running `watch` answers you as you work.
 
 ### CriticMarkup and Track Changes
 
@@ -47,6 +49,21 @@ We ship the beta {author="Claude (editor)" date="2026-10-15"~~on Friday~>next Tu
 
 The marks stay plain text in the note, so any CriticMarkup-aware tool can read them.
 
+### Watch: the collaboration loop
+
+`watch` is what makes this feel like collaboration rather than a batch job. An agent arms it on a note (or
+a folder of notes) and waits. Nothing happens until you write:
+
+1. You reply to a card, leave a comment ("too formal"), or make an edit of your own as a suggestion.
+2. About 20 seconds after you stop typing, `watch` wakes the agent with a summary of your new marks.
+3. The agent answers in the document: it replies to your comment, proposes the change you asked for as a
+   new suggestion, or accepts your edit. Then it goes back to watching.
+
+Waiting costs almost nothing: `watch` only checks the files' modification times every 10 seconds, and the
+agent does no work until something arrives. It remembers what it has already answered, so it never
+repeats itself and never misses a mark you made while it was busy. If two devices' sync copies of the
+note clash, it stops and tells you instead of writing.
+
 ## Why it exists
 
 The problems it solves when agents edit a note you are reviewing:
@@ -64,7 +81,7 @@ The problems it solves when agents edit a note you are reviewing:
 - **No way to say stop.** The hold switch stops every agent at once.
 - **Replies that go unanswered.** `watch` picks up your marks while agents are otherwise idle.
 
-## Why not Git?
+## Why not just use Git?
 
 Git is the usual way to review an agent's work: the agent edits files, and you read a diff or a pull request.
 That suits code. For a document that people and agents write together, it is often too heavy. This plugin is
@@ -88,6 +105,23 @@ an alternative to Git-based review workflows for that case.
   work and nothing to rebase.
 
 Use Git instead for code, for changes that span many files, and for rewrites you review as a whole.
+
+## Why not an MCP server?
+
+The work is editing files in the folder the agent is already working in, so a command does it with fewer
+moving parts:
+
+- **Nothing to run or configure.** The command is a single script on the PATH. There is no server process,
+  port or connection to set up, and nothing keeps running between sessions.
+- **Any caller can use it.** Agents, scripts, Git hooks and scheduled jobs all run it the same way; you can
+  too, from a terminal. An MCP server would serve MCP clients only.
+- **Waiting fits a command.** `watch` waits, sometimes for many minutes, until you mark something. An agent
+  runs it as a background job and picks up the result, which suits a command better than a long-blocking
+  MCP tool call.
+- **The safety is in the command.** The lock, the pause for your typing and the check that a change stuck
+  apply to every caller, so a server would add a process without adding protection.
+
+The cost: assistants that cannot run shell commands, such as a chat app without a terminal, cannot use it.
 
 ## Install
 
@@ -134,11 +168,14 @@ obsidian-track-changes-agent install-links   # run it again after each plugin up
 
 3. Open the note in Obsidian, then the review panel (command palette: "Track Changes: Open review panel").
    Accept, reject or reply to each card.
-4. Ask the agent to field your replies:
+4. Keep the conversation going. This is the part that makes it feel like working together:
 
    ```text
    Watch notes/launch-plan.md for my replies and answer them.
    ```
+
+   Now reply to a card or leave a comment in Obsidian. Half a minute after you stop typing, the agent's
+   answer appears in the note.
 
 With several agents on one document, name one editor and let the others comment:
 

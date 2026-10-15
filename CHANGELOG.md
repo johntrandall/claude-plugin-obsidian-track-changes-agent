@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4 (2026-10-15)
+
+- README: "Why not an MCP server?"; the command is described as designed for agentic use.
+- README: `watch` featured as the collaboration loop (hook, plain terms, its own section, quick start);
+  "Why not just use Git?".
+
 ## 0.1.3 (2026-10-15)
 
 - The `track-changes` command alias is gone: next to the Obsidian plugin of that name it was confusing.
