@@ -491,6 +491,23 @@ class Watch(Vault):
                                                 os.path.join(self.vault, "other.md"))).start()
         self.assertEqual(self.run_tool(*args, "--timeout", "2")[0], 1)  # other.md is not watched
 
+    def test_folder_includes_names_with_spaces_but_not_conflict_copies(self):
+        self.write("a\n", os.path.join(self.vault, "my note.md"))
+        self.write("b\n", os.path.join(self.vault, "my note (Conflicted copy Mac 1).md"))
+        files = tc.watch_targets([self.vault], "*.md")
+        names = sorted(os.path.basename(f) for f in files)
+        self.assertIn("my note.md", names)
+        self.assertNotIn("my note (Conflicted copy Mac 1).md", names)
+
+    def test_a_note_added_to_a_watched_folder_is_reported_not_baselined(self):
+        self.write("a\n", os.path.join(self.vault, "one.md"))
+        args = ["watch", self.vault, "--interval", "0.2", "--settle", "0.3"]
+        self.assertEqual(self.run_tool(*args, "--timeout", "0.5")[0], 1)          # baseline for the folder
+        self.write('new {author="Pat Example">>please look<<}\n', os.path.join(self.vault, "two.md"))
+        code, out, _ = self.run_tool(*args, "--timeout", "5")
+        self.assertEqual(code, 0, out)
+        self.assertIn("please look", out)
+
     def test_nothing_to_watch(self):
         code, _, err = self.run_tool("watch", os.path.join(self.vault, "missing.md"), "--timeout", "1")
         self.assertNotEqual(code, 0)

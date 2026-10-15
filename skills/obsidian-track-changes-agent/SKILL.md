@@ -15,6 +15,12 @@ links it into `~/.local/bin` for use outside Claude Code. `obsidian-track-change
 
 ## 1. When to use Track Changes, and when not
 
+**Best after the human has approved a version.** Once they have read and signed off a draft, every later
+change should arrive as a suggestion, so they see exactly what changed since their approval and decide
+each one. **Early in drafting, skip it**: while the text is still taking shape, write directly and keep
+going; a stream of cards for every sentence only slows the human down. Switch to suggestions when the
+human says the draft is approved, or asks to see your changes.
+
 | The question or work | Channel |
 |---|---|
 | The human's answer is **text**: a draft, a rewrite, a wording choice | Track Changes, as suggestions in the document |

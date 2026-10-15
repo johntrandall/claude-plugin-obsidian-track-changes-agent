@@ -13,6 +13,9 @@ has shipped.
 - **Automatic tidying.** Once you resolve every mark of a whole-line change, tidy the leftover blank lines
   without waiting to be asked.
 
+- **Ignore marks inside code.** A CriticMarkup example written inside backticks or a code block is read as
+  a live mark today; `list`, `check` and `watch` should skip it, and no command should change it.
+
 ## Under review
 
 - **Agent-neutral identity and packaging.** Marks signed by any agent (`Codex (editor)`, `Gemini

@@ -1,47 +1,62 @@
 # obsidian-track-changes-agent
 
-A Claude Code plugin that lets AI agents take part in CriticMarkup review in Obsidian: agents propose and
-comment as tracked changes, you accept, reject or reply with the Track Changes plugin, and an agent watching
-the note answers you as you go.
+A Claude Code plugin that lets AI agents propose edits and comments in your Obsidian notes as tracked
+changes. You accept, reject or reply with the Obsidian Track Changes plugin, and an agent watching the note
+answers you as you go.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## In plain terms
 
 When an AI agent helps you write, it is hard to see what it changed and to keep the final say. This plugin
-makes the agent propose every change the way a colleague would in a word processor: as a suggestion you
+makes the agent propose its changes the way a colleague would in a word processor: as a suggestion you
 accept or reject, with a note saying why. You answer in Obsidian, and the agent answers back.
 
 - **It feels like working with a colleague:** leave a comment or an edit in the note, and about half a
   minute after you stop typing, the agent watching it replies, makes the change you asked for, or asks you
   a question, right there in the document. No chat window, no copy and paste.
-- **You stay in charge:** an agent can never accept its own suggestion or reject one of yours.
-- **Nothing is lost while you type:** the agent waits until you pause, and checks afterwards that its change
-  stuck.
-- **One switch stops every agent:** create a note called `track-changes-hold`, even from your phone, and
-  every agent stops writing until you delete it.
+- **You stay in charge:** through this plugin, an agent cannot accept its own suggestion or reject one of
+  yours. You decide in Obsidian.
+- **Your typing is protected:** on the computer where the agents run, an agent waits until you pause and
+  checks afterwards that its change stuck. If you edit on another device, use the hold switch.
+- **One switch stops every write:** create a note called `track-changes-hold`, even from your phone, and
+  every write through the command stops until you delete it.
 - **Questions wait for you:** several questions can sit in the document until one review pass, instead of
   interrupting you in chat.
 - **No Git needed:** you review the way you would in a word processor, not as diffs, branches and pull
   requests.
 
+## When to use it
+
+It is best after you have approved a version of a document. From then on, every change an agent proposes
+through this plugin arrives as a suggestion (it applies directly only your own comment-free suggestions, tidies
+blank lines and removes comments), so you see exactly what changed since your approval and decide each one. Early in
+drafting, while the text is still taking shape, it is less friction to let the agent write directly and
+keep going; switch to suggestions once you have signed off a draft.
+
+It is not for code or for changes that span many files (use Git); not for assistants that cannot run shell
+commands; not yet for Windows; and the reviewing side needs Obsidian with the Track Changes plugin.
+
 ## What it does
 
 The plugin includes one command-line utility, `obsidian-track-changes-agent`, designed for agentic use, a
-skill that teaches Claude when and how to use it, and three slash commands for the common requests. Together they extend the CriticMarkup review workflow that the Obsidian
-Track Changes plugin enables, so agents can take part in it safely. The agent proposes text, comments and
-answers your replies. You decide in Obsidian, and an agent running `watch` answers you as you work.
+skill that teaches Claude when and how to use it, and three slash commands for the common requests.
+Together they extend the review workflow that the Obsidian Track Changes plugin enables, so agents can take
+part in it with guard rails. The agent proposes text, comments and answers your replies; you decide in
+Obsidian; and an agent in watching mode (`watch`, below) answers you as you work.
 
 ### CriticMarkup and Track Changes
 
-[CriticMarkup](http://criticmarkup.com) is an open, plain-text syntax for editorial marks in any text file
-([specification](http://criticmarkup.com/spec.php), [toolkit](https://github.com/CriticMarkup/CriticMarkup-toolkit)).
+The marks are CriticMarkup, an open, plain-text syntax for editorial marks in any text file. Its
+specification is the [syntax section](https://github.com/CriticMarkup/CriticMarkup-toolkit#the-basic-syntax)
+of the CriticMarkup toolkit's README on GitHub; the original site, criticmarkup.com, is no longer online.
 It has five marks: `{++added++}`, `{--removed--}`, `{~~old~>new~~}`, `{>>comment<<}` and `{==highlight==}`.
 
 [Track Changes](https://obsidian.md/plugins?id=track-changes), an Obsidian community plugin by Phil Baum,
 shows those marks as review cards you accept, reject or reply to. It adds per-mark metadata
-(`author="…" date="…"`) so each card says who made it. This command writes that signed form, and signs
-every agent's mark `Claude (<role>)`:
+(`author="…" date="…"`) so each card says who made it. This command writes that signed form and signs
+every agent's mark `Claude (<role>)`. The agent declares its role in brackets, and the command allows only
+that role's actions: the `editor` proposes text, and any other role, such as `checker`, only comments.
 
 ```text
 We ship the beta {author="Claude (editor)" date="2026-10-15"~~on Friday~>next Tuesday~~}{author="Claude (editor)" date="2026-10-15">>QA needs two more days<<}.
@@ -51,38 +66,45 @@ The marks stay plain text in the note, so any CriticMarkup-aware tool can read t
 
 ### Watch: the collaboration loop
 
-`watch` is what makes this feel like collaboration rather than a batch job. An agent arms it on a note (or
-a folder of notes) and waits. Nothing happens until you write:
+`watch` is what makes this feel like collaboration rather than a batch job. An agent arms it on a note, or
+on a folder of notes, and waits. Nothing happens until you write:
 
 1. You reply to a card, leave a comment ("too formal"), or make an edit of your own as a suggestion.
 2. About 20 seconds after you stop typing, `watch` wakes the agent with a summary of your new marks.
-3. The agent answers in the document: it replies to your comment, proposes the change you asked for as a
-   new suggestion, or accepts your edit. Then it goes back to watching.
+3. The agent answers in the document, usually within half a minute of your last keystroke: it replies to
+   your comment, proposes the change you asked for as a new suggestion, or accepts your edit. Then it goes
+   back to watching.
 
-It also notices your decisions: when you accept or reject one of its cards, it hears which, tidies up after
-a whole-line change, and does not propose a change you rejected again.
+It also notices your decisions. When you accept or reject one of its cards, `watch` reports which, and the
+agent is told to tidy up after a whole-line change and not to propose a change you rejected again.
 
 Waiting costs almost nothing: `watch` only checks the files' modification times every 10 seconds, and the
-agent does no work until something arrives. It remembers what it has already answered, so it never
-repeats itself and never misses a mark you made while it was busy. If two devices' sync copies of the
-note clash, it stops and tells you instead of writing.
+agent does no work until something arrives. It remembers what it has already reported, so it does not repeat
+itself, and it picks up marks you made while it was busy. (The first watch on a note or folder counts the marks
+already there as seen; a note added to a watched folder later is watched in full.) If your sync service keeps two versions of the note and adds a second file (a
+conflict copy), `watch` stops and reports it, and agents do not write until you reconcile the two.
 
 ## Why it exists
 
 The problems it solves when agents edit a note you are reviewing:
 
-- **Malformed marks.** Agents typing CriticMarkup by hand sometimes get it wrong: unsigned marks, nested
-  marks, marks wrapped across lines. Track Changes cannot show those as cards. The command writes every
-  mark the same, checked way.
+- **Track Changes alone does not guard agents' writes.** It shows review cards for anyone's marks, but
+  nothing in it makes an agent sign its marks, wait for your typing, respect a hold, or answer your
+  replies. This plugin adds that agent side.
+- **Malformed marks.** Agents typing CriticMarkup by hand sometimes get it wrong: unsigned marks (Track
+  Changes shows them under your name, so they look like yours) and nested marks (the inner mark gets no
+  card). The command writes every mark the same, checked way.
 - **Writes that collide with your typing.** An agent saving while you type can lose your keystrokes or its
-  own change. The command waits for a pause, locks the note, and checks afterwards that its change stuck.
+  own change. The command waits for a pause, takes a lock so two agents cannot overwrite each other, and
+  checks afterwards that its change stuck.
 - **Agents that overstep.** Without rules, any agent can rewrite the text or accept its own suggestions.
-  Only one agent (the editor) may propose text; the others may only comment. No agent may accept its own
-  suggestion or reject yours.
+  The command accepts text proposals only from the `editor` role (an agent declares its role itself) and
+  lets other roles only comment, and the skill names the `editor` as the one agent that owns a note's
+  text.
 - **Clashes between devices.** When your sync service has kept two versions of a note, the command stops
   writing until you sort them out.
-- **No way to say stop.** The hold switch stops every agent at once.
-- **Replies that go unanswered.** `watch` picks up your marks while agents are otherwise idle.
+- **No way to say stop.** The [hold switch](#the-hold-switch) stops every write through the command at once.
+- **Replies that go unanswered.** `watch` answers your marks while you work.
 
 ## Why not just use Git?
 
@@ -126,17 +148,21 @@ moving parts:
 
 The cost: assistants that cannot run shell commands, such as a chat app without a terminal, cannot use it.
 
+**Tied to Claude Code, for now.** The packaging, the `Claude (<role>)` signature and the slash commands are
+Claude Code specific. The command itself is a plain Python script that any agent able to run shell commands
+can call. An agent-neutral signature and packaging are under review: see [ROADMAP.md](ROADMAP.md).
+
 ## Install
 
 ### Requirements
 
 | For | You need |
 |---|---|
-| Agents (this plugin) | macOS or Linux (the write lock uses a Unix-only call; Windows is on the roadmap), Claude Code, and Python 3 (preinstalled on most Linux systems; on macOS it comes with the Xcode Command Line Tools). Claude Code plugins cannot declare a dependency on Python, so the plugin checks at the start of each session and tells you if Python 3 is missing |
-| You (reviewing) | Obsidian with the [Track Changes](https://obsidian.md/plugins?id=track-changes) community plugin enabled in the vault, its author name set to your own. Without it you see raw `{~~old~>new~~}` marks instead of review cards |
-| Optional | A sync service such as Obsidian Sync, to review on another device. With Obsidian Sync, set conflict handling to "Create conflict file", so a clash between devices leaves a visible conflict copy (the command then stops writing) |
+| Agents (this plugin) | macOS or Linux (the write lock uses a Unix-only call; Windows is on the roadmap), Claude Code, and Python 3 (preinstalled on most Linux systems; on macOS it comes with the Xcode Command Line Tools). Claude Code plugins cannot declare a dependency on Python, so the plugin checks when a session starts and tells you if Python 3 is missing |
+| You (reviewing) | Obsidian with the [Track Changes](https://obsidian.md/plugins?id=track-changes) community plugin enabled in the vault, its "Your name" setting set to your own name. Without it you see raw `{~~old~>new~~}` marks instead of review cards |
+| Optional | A sync service such as Obsidian Sync, to review on another device. With Obsidian Sync, set conflict handling to "Create conflict file" on every device, so a clash between devices leaves a visible conflict copy (a second file named `<note> (Conflicted copy …).md`); the command then stops writing |
 
-Keep the Inkling plugin switched off in the same vault: it rewrites marks, and the command refuses to write
+Keep the Inkling plugin (another Obsidian suggestion plugin) switched off in the same vault: it rewrites marks, and the command refuses to write
 while it is enabled.
 
 ### Install the plugin
@@ -177,8 +203,8 @@ obsidian-track-changes-agent install-links   # run it again after each plugin up
    Watch notes/launch-plan.md for my replies and answer them.
    ```
 
-   Now reply to a card or leave a comment in Obsidian. Half a minute after you stop typing, the agent's
-   answer appears in the note.
+   Now reply to a card or leave a comment in Obsidian. About half a minute after you stop typing, the
+   agent's answer appears in the note.
 
 Or use the slash commands, which say the same thing the same way every time:
 
@@ -197,12 +223,13 @@ They only comment; you turn their points into suggestions.
 
 ## The hold switch
 
-The hold switch stops every agent from writing. When to use it:
+The hold switch stops every write made through the command. When to use it:
 
 - **You are reviewing on another device.** The command cannot see your typing on a phone or tablet, and a
   sync merge could lay your older copy over the agents' newer writes (see Known limit, under Status).
 - **You are rewriting the note yourself** and do not want suggestions landing in the middle of it.
-- **An agent is misbehaving.** One file stops every agent at once, without finding each session.
+- **An agent is misbehaving.** One file stops every write through the command at once, without finding
+  each session.
 - **The document is final.** Freeze it before you send or publish it.
 
 How it works:
@@ -213,12 +240,13 @@ How it works:
 - **While it is on:** every write through the command stops with "the human's hold switch is on". The
   skill tells agents never to delete the file. Reading still works, and a write that has already started
   finishes.
-- **Turn it off:** delete the note.
+- **Turn it off:** delete the note. (The hold files of the watchbill plugin, `.watchbill-hold` and
+  `watchbill-hold.md`, count too.)
 - **Hold one folder only:** put the note in that folder instead. The command looks for it in the note's
-  own folder and every folder above it, up to the vault's top level.
+  own folder and every folder above it, up to the vault's top level (in a plain Git repository, the
+  repository root).
 - **From a terminal:** an empty file named `.track-changes-hold` works too. The visible `.md` name exists
-  because Obsidian cannot create files whose names start with a dot, and Obsidian Sync does not carry
-  them.
+  because Obsidian hides files whose names start with a dot, and Obsidian Sync does not carry them.
 - **Check it:** `obsidian-track-changes-agent hold <note>` says whether a hold applies to that note.
 
 The hold takes effect when the file reaches the agents' computer, so allow for your sync service's delay.
@@ -234,18 +262,20 @@ The hold takes effect when the file reaches the agents' computer, so allow for y
 | `revise` | the editor | folds several of its own pending suggestions into one card |
 | `accept` | the editor | accepts one of your suggestions that has no comment attached |
 | `resolve` | the editor | removes an agent's comment, or yours once a pending suggestion addresses it |
-| `watch` | any agent | waits for your new marks and your accepts and rejects: exit 0 with a summary, 1 on timeout, 2 on a sync conflict copy |
+| `watch` | any agent | waits for your new marks and your accepts and rejects |
 
 ### Who decides
 
-- **Agents' suggestions: only you.** No agent can accept or reject a suggestion made by an agent, its own
-  included. There is no override, not even if you tell it to in chat: you accept or reject in Obsidian.
+- **Agents' suggestions: only you.** The command refuses to let any agent accept or reject a suggestion
+  made by an agent, its own included, and it has no override, not even if you tell the agent to in chat.
+  You accept or reject in Obsidian. An agent that edited the file by hand instead could still do it; see
+  Deleting markup.
 - **Your suggestions: you, or the editor when there is nothing to discuss.** The editor may accept one of
   your suggestions that has no comment attached. It never rejects yours: if it disagrees, it comments with
   its reasons, and you reject it yourself if you agree.
-- **Comments.** The editor removes its own when they are done. It removes yours only once one of its
-  suggestions addresses them, and then your comment moves next to that suggestion, quoted, so you review
-  the change together with what you asked for.
+- **Comments.** The editor removes agents' comments when they are done. It removes yours only once one of
+  its suggestions addresses them, and then your comment moves next to that suggestion, quoted, so you
+  review the change together with what you asked for.
 - **Its own pending cards.** The editor may fold several of them into one new card. Nothing is accepted;
   the original text stays as the new card's "before".
 - **Deleting markup.** No command removes marks wholesale. An agent that edited the file directly, instead
@@ -255,14 +285,13 @@ The hold takes effect when the file reaches the agents' computer, so allow for y
 
 ### Every write is guarded
 
-Every write refuses while the hold switch is on, while a sync conflict
-copy of the note exists, or while the Inkling plugin is enabled. It then waits for 5 seconds without edits,
-locks the note, re-reads it, replaces it atomically, and after 3 seconds checks the change is still there
-(exit 3 if not).
+Every write refuses while the hold switch is on, while a sync conflict copy of the note exists, or while
+the Inkling plugin is enabled. It then waits for 5 seconds without edits, locks the note, re-reads it,
+replaces it atomically, and after 3 seconds checks the change is still there, and says so if it is not.
 
 The skill (`skills/obsidian-track-changes-agent/SKILL.md`) covers the rest: an example for every command,
-the watch loop, why an unaccepted suggestion is not a decision, and when Track Changes is the right channel
-for a question rather than chat or a task board.
+the exit codes, the watch loop, why an unaccepted suggestion is not a decision, and when Track Changes is
+the right channel for a question rather than chat or a task board.
 
 ## Configuration
 
@@ -280,15 +309,14 @@ Programs can load the command as a Python module and call `parse(text)` and `is_
 
 ## Status
 
-Beta. The command has been in use since October 2026 as `criticmarkup.py`, bundled with the
-[watchbill](https://github.com/johntrandall/claude-plugin-watchbill) plugin up to its 0.4 releases.
-Later watchbill releases use this plugin instead. Tested with Track Changes 2.2.0 and Obsidian Sync.
+Beta. Tested with Track Changes 2.2.0 and Obsidian Sync. The command began as `criticmarkup.py` inside the
+[watchbill](https://github.com/johntrandall/claude-plugin-watchbill) plugin, which still bundles it in its
+current public release; the next watchbill release uses this plugin instead.
 
 - **Known limit: editing on another device.** The command's check for your typing sees only the computer
   where the agents run. If you edit the note on your phone or another computer, your edits arrive only when
   your sync service (Obsidian Sync, iCloud or similar) delivers them, and the service may merge your older
-  copy over the agents' newer writes. Turn on the hold switch before you review on another device, and
-  delete it when you are done.
+  copy over the agents' newer writes. Use the hold switch while you review on another device.
 
 ## Roadmap
 

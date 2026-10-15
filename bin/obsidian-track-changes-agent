@@ -116,7 +116,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-VERSION = "0.1.6"
+VERSION = "0.1.9"
 PROG = "obsidian-track-changes-agent"
 
 
@@ -744,7 +744,8 @@ def watch_targets(paths, pattern):
     for p in paths:
         p = Path(p)
         if p.is_dir():
-            files += sorted(f for f in p.glob(pattern) if " " not in f.name)
+            # every matching note, names with spaces included; only sync conflict copies are left out
+            files += sorted(f for f in p.glob(pattern) if " (Conflicted copy" not in f.name)
         elif p.is_file():
             files.append(p)
     return [f.resolve() for f in files]
@@ -819,7 +820,13 @@ def cmd_watch(a):
     files = watch_targets(a.paths, a.pattern)
     if not files:
         raise SystemExit(f"{PROG} watch: nothing to watch")
-    state_path = STATE.parent / f"watch-{hashlib.sha1('|'.join(map(str, files)).encode()).hexdigest()[:12]}.json"
+    # Keyed on what was asked to be watched (paths and pattern), not on the files found today, so a note
+    # added to a watched folder joins the same memory and its marks are reported, not silently baselined.
+    asked = "|".join(sorted(str(Path(x).resolve()) for x in a.paths)) + f"|{a.pattern}"
+    state_path = STATE.parent / f"watch-{hashlib.sha1(asked.encode()).hexdigest()[:12]}.json"
+    legacy_path = STATE.parent / f"watch-{hashlib.sha1('|'.join(map(str, files)).encode()).hexdigest()[:12]}.json"
+    if not state_path.exists() and read_state(legacy_path.name) is not None:
+        state_path = legacy_path                 # a watch armed by an earlier version keeps its memory
     prior = read_state(state_path.name)
     stored = {}
     if isinstance(prior, dict):                  # {"seen": human mark keys reported, "agents": {key: details}}

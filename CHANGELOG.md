@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.1.9 (2026-10-15)
+
+- Fix: `watch` keyed its memory on the files it found, so a note added to a watched folder started a new
+  baseline and its unreported marks were silently treated as seen. Memory is now keyed on what you asked it
+  to watch; a watch armed by an earlier version keeps its memory.
+- README, round 3 of the cold verifiers: what "through this plugin" covers (the editor applies only your
+  comment-free suggestions and tidies blank lines directly); the hold switch stops writes through the
+  command, not every agent; the lock is against agents overwriting each other. Round 4: the same for the
+  plain-terms bullet; comment removal named; `watch` reports a conflict and agents hold off; Inkling named
+  as an Obsidian plugin; watchbill's hold files mentioned.
+
+## 0.1.8 (2026-10-15)
+
+- Fix: `watch` on a folder skipped every note whose file name contains a space (most Obsidian notes). It
+  now skips only sync conflict copies.
+- README, after two cold verifiers (facts and links; reader experience): the hook no longer leans on
+  "CriticMarkup" before defining it; "When to use it" moved up, with who it is not for; claims calibrated
+  to what the command enforces (the `editor` is a role; hand edits could bypass it); "Track Changes alone
+  is for people"; "Tied to Claude Code, for now"; one timing story for `watch` (wakes about 20 seconds
+  after you stop typing, answer within about half a minute); conflict copies named; Obsidian Sync's
+  conflict setting is per device; the hold search stops at a Git repository's root too; the watchbill
+  history corrected (its current public release still bundles the old script); exit codes left to the
+  skill; Track Changes' handling of unsigned and multi-line marks stated correctly (round 2).
+
+## 0.1.7 (2026-10-15)
+
+- README: the CriticMarkup links pointed at criticmarkup.com, which is no longer online (a parked page; the
+  front page redirects to the toolkit on GitHub). The README now links the syntax section of the toolkit's
+  README, which is the specification.
+- ROADMAP: ignore CriticMarkup examples inside code.
+- When to use it (README and skill): best after you have approved a version, to see every later change;
+  early in drafting, let the agent write directly.
+
 ## 0.1.6 (2026-10-15)
 
 - `watch` also wakes when you accept or reject one of an agent's suggestions, and says which (judged from
@@ -56,7 +89,7 @@ The first public release.
 ## 0.1.0 (2026-10-15)
 
 First release as its own plugin. The command was `criticmarkup.py`, bundled with the watchbill
-plugin (watchbill 0.4.0, its last change there 2026-10-14).
+plugin (last changed there on 2026-10-14; watchbill's public release 0.3.2 still bundles it).
 
 - Renamed to `track-changes`; the plugin is `track-changes`, the skill `track-changes`.
 - Self-contained: the hold switch is built in. It honours `.track-changes-hold` and
