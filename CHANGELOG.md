@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2 (2026-10-15)
+
+- README: "Why not Git?", the case for in-document review over diffs and pull requests when people and
+  agents write a document together (including a parallel review channel for documentation in a repository
+  where agents change code at the same time, without worktrees), and a plain-terms line saying no Git is
+  needed.
+
 ## 0.1.1 (2026-10-15)
 
 The first public release.

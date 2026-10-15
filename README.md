@@ -19,6 +19,8 @@ answers up.
   from your phone.
 - **Questions wait for you:** several questions can sit in the document until one review pass, instead of
   interrupting you in chat.
+- **No Git needed:** you review the way you would in a word processor, not as diffs, branches and pull
+  requests.
 
 ## What it does
 
@@ -37,6 +39,30 @@ and disk writes that land in the middle of the human's typing. Suggestion plugin
 captured an agent's disk write as the human's own suggestion and looped. This command makes the right thing
 the only thing: it checks for the human's typing, a hold switch, a Sync conflict copy and a misbehaving
 plugin before every write, takes a lock, and verifies the result.
+
+## Why not Git?
+
+Git is the usual way to review an agent's work: the agent edits files, and you read a diff or a pull request.
+That suits code. For a document that people and agents write together, it is often too heavy. This plugin is
+an alternative to Git-based review workflows for that case.
+
+- **Review happens in the document.** Each change is a card beside the sentence it changes. You go through
+  them word-processor style, at reading speed, with no diff viewer, branch or commit in the way.
+- **Several agents can work on one long document at once.** An editor's suggestions and other agents'
+  comments are small marks anchored to their own text in the same file. They do not sit on competing
+  branches that someone has to merge.
+- **It runs beside your Git work, not inside it.** When your documents already live as Markdown in a Git
+  repository, agents can change code there while you and other agents review the documentation through
+  Track Changes. That is a second, parallel review channel in the same checkout: no extra worktree, branch
+  or merge for the prose.
+- **You decide change by change.** Accept three suggestions, reject one, reply to another. A pull request
+  asks you to take or return a whole batch.
+- **The reviewer needs no Git.** Anyone who can use Obsidian can review, including people who never touch a
+  terminal.
+- **Git still fits underneath.** The note stays plain Markdown with plain-text marks, so you can keep
+  versioning it with Git. Commit your own edits before agents write on top of them.
+
+Use Git instead for code, for changes that span many files, and for rewrites you review as a whole.
 
 ## Install
 
